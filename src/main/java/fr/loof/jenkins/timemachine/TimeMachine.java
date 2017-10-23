@@ -1,21 +1,21 @@
-package com.cloudbees.jenkins.plugins.timemachine;
+package fr.loof.jenkins.timemachine;
 
 import hudson.Extension;
 import hudson.XmlFile;
 import hudson.init.InitMilestone;
 import hudson.init.Initializer;
+import hudson.model.User;
 import hudson.util.PluginServletFilter;
-import jenkins.install.SetupWizard;
 import jenkins.model.Jenkins;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
-import org.jvnet.hudson.reactor.Reactor;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
@@ -23,6 +23,7 @@ import java.io.StringWriter;
 @Extension
 public class TimeMachine {
 
+    public static final Logger log = Logger.getLogger(TimeMachine.class.getName());
 
     private Git git;
     private int rel;
@@ -38,7 +39,7 @@ public class TimeMachine {
             git = Git.init().setDirectory(rootDir).call();
         }
         rel = rootDir.getCanonicalPath().length() + 1;
-        System.out.printf("Timemachine ready");
+        log.info("Timemachine ready, using git repository "+rootDir);
         PluginServletFilter.addFilter(new TimeMachineFilter(this));
     }
 
@@ -46,7 +47,7 @@ public class TimeMachine {
     public void add(XmlFile file) throws IOException, GitAPIException {
         if (git == null) return; // jenkins init
         final String path = file.getFile().getCanonicalPath().substring(rel);
-        System.out.println( " +" +path);
+        log.fine( " +" +path);
         final ChangeSet changeSet = this.changeSet.get();
         if (changeSet != null) {
             changeSet.add(path);
@@ -54,14 +55,17 @@ public class TimeMachine {
             // change happens outside a web request
             synchronized (git) {
                 git.add().addFilepattern(path).call();
+                if (git.status().call().isClean()) return;
+
                 String cause = guessCause();
                 final Object principal = Jenkins.getAuthentication().getPrincipal();
+                final String author = principal.toString();
                 String sha1 = git.commit()
-                        .setAuthor(principal.toString(), "system@nowhere.org")
+                        .setAuthor(author, "system@nowhere.org") // TODO get author's email from User.getUserProperty
                         .setCommitter("👻", "timemachine-plugin@jenkins.io")
                         .setMessage("internally updated "+ path + '\n' + cause)
                         .call().name();
-                System.out.println("> " + sha1);
+                log.fine("> " + sha1);
             }
         }
     }
@@ -94,12 +98,12 @@ public class TimeMachine {
 
     }
 
-    public void start(String message) {
-        changeSet.set(new ChangeSet().withMessage(message));
+    public void start() {
+        changeSet.set(new ChangeSet());
     }
 
 
-    public void commit() throws GitAPIException {
+    public void commit(String message) throws GitAPIException {
         if (git == null) return; // jenkins init
         final ChangeSet changeSet = this.changeSet.get();
         if (changeSet == null || changeSet.isEmpty()) return;
@@ -111,9 +115,9 @@ public class TimeMachine {
             final Object principal = Jenkins.getAuthentication().getPrincipal();
             String sha1 = git.commit()
                 .setAuthor(principal.toString(), "")
-                .setMessage(changeSet.getMessage()) //
+                .setMessage(message)
                 .call().name();
-            System.out.println("> " + sha1);
+            log.fine("> " + sha1);
         }
     }
 }

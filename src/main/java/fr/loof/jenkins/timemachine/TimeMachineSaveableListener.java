@@ -1,4 +1,4 @@
-package com.cloudbees.jenkins.plugins.timemachine;
+package fr.loof.jenkins.timemachine;
 
 import hudson.Extension;
 import hudson.XmlFile;

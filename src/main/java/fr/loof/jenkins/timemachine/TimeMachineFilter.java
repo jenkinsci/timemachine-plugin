@@ -1,7 +1,5 @@
-package com.cloudbees.jenkins.plugins.timemachine;
+package fr.loof.jenkins.timemachine;
 
-import org.acegisecurity.Authentication;
-import org.acegisecurity.context.SecurityContextHolder;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.servlet.Filter;
@@ -10,7 +8,6 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
@@ -34,10 +31,10 @@ public class TimeMachineFilter implements Filter {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest h = (HttpServletRequest) servletRequest;
-        timeMachine.start(guessAction(h.getPathInfo()));
+        timeMachine.start();
         filterChain.doFilter(servletRequest, servletResponse);
         try {
-            timeMachine.commit();
+            timeMachine.commit(guessAction(h));
         } catch (GitAPIException e) {
             throw new RuntimeException("oups", e);
         }
@@ -47,7 +44,25 @@ public class TimeMachineFilter implements Filter {
     /**
      * Guess user intent based on the requested URI
      */
-    private String guessAction(String pathInfo) {
+    private String guessAction(HttpServletRequest request) {
+        String pathInfo = request.getPathInfo();
+
+        switch (pathInfo) {
+            case "/configSubmit"               : return "configure system";
+            case "/setupWizard/createAdminUser": return "create Administrator from setup wizard";
+            case "/configureSecurity/configure": return "configure global security";
+            case "/configureTools/configure"   : return "configure tools";
+            // ...
+        }
+
+        if (pathInfo.endsWith("/createItem")) {
+            return "create new Item";  // TODO find way to capture item type & item name
+        }
+
+        if (pathInfo.startsWith("/job/") && pathInfo.endsWith("/configSubmit")) {
+            return "edited configuration of job " + pathInfo.substring(5, pathInfo.length() - 13);
+        }
+
         return pathInfo;
     }
 

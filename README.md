@@ -3,15 +3,20 @@
 ![logo](image.jpg)
 
 
-This plugin help you track changes on Jenkins configuration. It records changes made from jenkins into git
-commits and store them in a local git reporistory, logging author and trying to guess user intent.
+This plugin help you track changes on Jenkins configuration. It records changes 
+made to jenkins configuration as commits in a local git repository, logging author 
+os one can easily audit who changed what on a master.
 
-This is sort of a combination between JobConfigHistory, scm-sync-configuration and audit-trail plugins
+Final goal is to provide sort of a combination of JobConfigHistory, scm-sync-configuration and audit-trail plugins
+
+## Status
+
+The basic change collection infrastructure is implemented.
+JENKINS_HOME is converted into a git repository, changes are tracked as commits
 
 ## TODO 
 
+ - [ ] Track item creation so we can log name and type
  - [ ] Option to push repo to a remote as a scheduled task
- - [ ] Detect more URI patterns to guess user intent
- - [ ] Detect more stacktrace elements to guess SYSTEM updates causes
- - [ ] UI to list changes and (reusing some Github UI clone ?) 
+ - [ ] UI to list changes (commits) and diff 
  - [ ] Option to revert changes from UI

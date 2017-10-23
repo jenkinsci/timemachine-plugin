@@ -1,4 +1,4 @@
-package com.cloudbees.jenkins.plugins.timemachine;
+package fr.loof.jenkins.timemachine;
 
 import java.util.ArrayList;
 import java.util.List;
