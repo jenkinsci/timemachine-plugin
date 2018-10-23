@@ -1,19 +1,27 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <l:layout permission="${app.ADMINISTER}" title="${%Configuration history}">
+    <l:header>
+      <link rel="stylesheet" type="text/css" href="${rootURL}/plugin/timemachine/diff2html.min.css"/>
+      <script src="${rootURL}/plugin/timemachine/diff2html.min.js"></script>
+      <script src="${rootURL}/plugin/timemachine/diff2html-ui.min.js"></script>
+    </l:header>
     <st:include it="${app}" page="sidepanel.jelly" />
     <l:main-panel>
       <h1><img src="${rootURL}/plugin/timemachine/64x64/delorean.png"/> Commit ${it.sha1}</h1>
 
-
-      <li>
-      <j:forEach var="entry" items="${it.details}">
-        <ul><pre>${entry}</pre></ul>
-      </j:forEach>
-      </li>
+      <div id="diff">${it.diff}</div>
+      <script>
+        let diff = "${it.escapedDiff}";
+        var diffHtml = Diff2Html.getPrettyHtml(diff, {
+          inputFormat: 'diff', showFiles: true, matching: 'lines', outputFormat: 'side-by-side'
+        });
+        document.getElementById("diff").innerHTML = diffHtml;
+      </script>
 
 
 
     </l:main-panel>
   </l:layout>
+
 </j:jelly>

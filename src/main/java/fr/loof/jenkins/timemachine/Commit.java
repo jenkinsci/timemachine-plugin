@@ -1,25 +1,29 @@
 package fr.loof.jenkins.timemachine;
 
-import java.util.List;
+import org.apache.commons.lang.StringEscapeUtils;
 
 /**
  * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
  */
 public class Commit {
     private String sha1;
-    private List<String> details;
+    private String diff;
 
-    public Commit(String sha1, List<String> details) {
-
+    public Commit(String sha1, String diff) {
         this.sha1 = sha1;
-        this.details = details;
+        this.diff = diff;
+
     }
 
     public String getSha1() {
         return sha1;
     }
 
-    public List<String> getDetails() {
-        return details;
+    public String getDiff() {
+        return diff;
+    }
+
+    public String getEscapedDiff() {
+        return StringEscapeUtils.escapeJava(diff);
     }
 }

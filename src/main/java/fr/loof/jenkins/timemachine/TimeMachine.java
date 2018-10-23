@@ -75,6 +75,12 @@ public class TimeMachine extends ManagementLink {
             git = Git.open(rootDir);
         } catch (RepositoryNotFoundException e) {
             git = Git.init().setDirectory(rootDir).call();
+            git.commit()
+                .setAuthor("👻", "timemachine-plugin@jenkins.io")
+                .setCommitter("👻", "timemachine-plugin@jenkins.io")
+                .setMessage("initial commit")
+                .setAllowEmpty(true)
+                .call().name();
         }
         rel = rootDir.getCanonicalPath().length() + 1;
         log.info("Timemachine ready, using git repository "+rootDir);
@@ -177,19 +183,22 @@ public class TimeMachine extends ManagementLink {
         ObjectId parent = repository.resolve(sha1+"~1");
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        DiffFormatter formatter = new DiffFormatter( out );
+        DiffFormatter formatter = new DiffFormatter(out);
         formatter.setRepository(repository);
         AbstractTreeIterator commitTreeIterator = prepareTreeParser(repository, o);
         AbstractTreeIterator parentTreeIterator = prepareTreeParser(repository, parent);
-        List<DiffEntry> diffEntries = formatter.scan( commitTreeIterator, parentTreeIterator );
+        List<DiffEntry> diffEntries = formatter.scan( parentTreeIterator, commitTreeIterator );
 
-        for( DiffEntry entry : diffEntries ) {
-            formatter.format(entry);
-            String diffText = out.toString("UTF-8");
-            details.add(diffText);
-            out.reset();
-        }
-        return new Commit(sha1, details);
+        formatter.format(diffEntries);
+        String diff = out.toString("UTF-8");
+
+        // Can't find a way for JGit to skip header
+        // diff --git a/foo b/foo
+        // index 123abc..456def
+
+        diff = diff.substring(diff.indexOf('\n')+1);
+        diff = diff.substring(diff.indexOf('\n')+1);
+        return new Commit(sha1, diff);
     }
 
     private static AbstractTreeIterator prepareTreeParser(Repository repository, ObjectId ref) throws Exception {
