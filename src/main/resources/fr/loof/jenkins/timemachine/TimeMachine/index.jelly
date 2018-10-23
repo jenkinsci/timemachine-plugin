@@ -1,0 +1,26 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <l:layout permission="${app.ADMINISTER}" title="${%Configuration history}">
+    <st:include it="${app}" page="sidepanel.jelly" />
+    <l:main-panel>
+      <h1><img src="${rootURL}/plugin/timemachine/64x64/delorean.png"/> Configuration history</h1>
+
+      <f:section title="Configuration changes">
+        <table>
+          <thead>
+            <th>id</th>
+            <th>author</th>
+            <th>message</th>
+          </thead>
+          <tbody>
+          <j:forEach var="commit" items="${it.history}">
+          <tr>
+            <td><a href="${commit.id.name}">${commit.id.abbreviate(8).name()}</a></td><td>${commit.authorIdent.name}</td><td>${commit.shortMessage}</td>
+          </tr>
+          </j:forEach>
+          </tbody>
+        </table>
+      </f:section>
+    </l:main-panel>
+  </l:layout>
+</j:jelly>

@@ -4,13 +4,15 @@ import hudson.Extension;
 import hudson.XmlFile;
 import hudson.init.InitMilestone;
 import hudson.init.Initializer;
-import hudson.model.User;
+import hudson.model.ManagementLink;
 import hudson.util.PluginServletFilter;
 import jenkins.model.Jenkins;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
+import org.eclipse.jgit.revwalk.RevCommit;
 
+import javax.annotation.CheckForNull;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -21,9 +23,32 @@ import java.util.logging.Logger;
  * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
  */
 @Extension
-public class TimeMachine {
+public class TimeMachine extends ManagementLink {
 
     public static final Logger log = Logger.getLogger(TimeMachine.class.getName());
+
+    @Override
+    public String getIconFileName() {
+        return "/plugin/timemachine/48x48/delorean.png";
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "Time machine";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Track and manage configuration changes";
+    }
+
+
+    @Override
+    public String getUrlName() {
+        return "timemachine";
+    }
+
+
 
     private Git git;
     private int rel;
@@ -120,4 +145,11 @@ public class TimeMachine {
             log.fine("> " + sha1);
         }
     }
+
+    public Iterable<RevCommit> getHistory() throws GitAPIException {
+        return git.log()
+            .setMaxCount(100)
+            .call();
+    }
+
 }
