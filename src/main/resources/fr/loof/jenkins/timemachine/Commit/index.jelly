@@ -1,0 +1,19 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <l:layout permission="${app.ADMINISTER}" title="${%Configuration history}">
+    <st:include it="${app}" page="sidepanel.jelly" />
+    <l:main-panel>
+      <h1><img src="${rootURL}/plugin/timemachine/64x64/delorean.png"/> Commit ${it.sha1}</h1>
+
+
+      <li>
+      <j:forEach var="entry" items="${it.details}">
+        <ul><pre>${entry}</pre></ul>
+      </j:forEach>
+      </li>
+
+
+
+    </l:main-panel>
+  </l:layout>
+</j:jelly>

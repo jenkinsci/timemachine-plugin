@@ -15,7 +15,9 @@
           <tbody>
           <j:forEach var="commit" items="${it.history}">
           <tr>
-            <td><a href="${commit.id.name}">${commit.id.abbreviate(8).name()}</a></td><td>${commit.authorIdent.name}</td><td>${commit.shortMessage}</td>
+            <td><a href="commit/${commit.id.name}">${commit.id.abbreviate(8).name()}</a></td>
+            <td><a href="${rootURL}/user/${commit.authorIdent.name}">${commit.authorIdent.name}</a></td>
+            <td>${commit.shortMessage}</td>
           </tr>
           </j:forEach>
           </tbody>

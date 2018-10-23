@@ -8,15 +8,28 @@ import hudson.model.ManagementLink;
 import hudson.util.PluginServletFilter;
 import jenkins.model.Jenkins;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.diff.DiffEntry;
+import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectReader;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevTree;
+import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.treewalk.AbstractTreeIterator;
+import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 
-import javax.annotation.CheckForNull;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -80,7 +93,10 @@ public class TimeMachine extends ManagementLink {
             // change happens outside a web request
             synchronized (git) {
                 git.add().addFilepattern(path).call();
-                if (git.status().call().isClean()) return;
+                final Status status = git.status().call();
+                if (status.getAdded().size() == 0
+                 && status.getRemoved().size() == 0
+                 && status.getChanged().size() == 0) return;
 
                 String cause = guessCause();
                 final Object principal = Jenkins.getAuthentication().getPrincipal();
@@ -150,6 +166,43 @@ public class TimeMachine extends ManagementLink {
         return git.log()
             .setMaxCount(100)
             .call();
+    }
+
+    public Commit getCommit(String sha1) throws Exception {
+        final Repository repository = git.getRepository();
+
+        List<String> details = new ArrayList<>();
+
+        ObjectId o = repository.resolve(sha1);
+        ObjectId parent = repository.resolve(sha1+"~1");
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        DiffFormatter formatter = new DiffFormatter( out );
+        formatter.setRepository(repository);
+        AbstractTreeIterator commitTreeIterator = prepareTreeParser(repository, o);
+        AbstractTreeIterator parentTreeIterator = prepareTreeParser(repository, parent);
+        List<DiffEntry> diffEntries = formatter.scan( commitTreeIterator, parentTreeIterator );
+
+        for( DiffEntry entry : diffEntries ) {
+            formatter.format(entry);
+            String diffText = out.toString("UTF-8");
+            details.add(diffText);
+            out.reset();
+        }
+        return new Commit(sha1, details);
+    }
+
+    private static AbstractTreeIterator prepareTreeParser(Repository repository, ObjectId ref) throws Exception {
+        RevWalk walk = new RevWalk(repository);
+        RevCommit commit = walk.parseCommit(ref);
+        RevTree tree = walk.parseTree(commit.getTree().getId());
+
+        CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
+
+        try (ObjectReader oldReader = repository.newObjectReader()) {
+            oldTreeParser.reset(oldReader, tree.getId());
+        }
+        return oldTreeParser;
     }
 
 }
