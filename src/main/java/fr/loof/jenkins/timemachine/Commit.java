@@ -1,6 +1,7 @@
 package fr.loof.jenkins.timemachine;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
@@ -24,6 +25,7 @@ public class Commit {
     }
 
     public String getEscapedDiff() {
-        return StringEscapeUtils.escapeJava(diff);
+        final String s = StringEscapeUtils.escapeJava(diff);
+        return StringUtils.replace(s, "<", "\\u003C");
     }
 }
