@@ -13,10 +13,10 @@ Final goal is to provide sort of a combination of JobConfigHistory, scm-sync-con
 
 The basic change collection infrastructure is implemented.
 JENKINS_HOME is converted into a git repository, changes are tracked as commits
-
+An UI is provided to list changes (i.e. commits) and diff 
+ 
 ## TODO 
 
  - [ ] Track item creation so we can log name and type
  - [ ] Option to push repo to a remote as a scheduled task
- - [ ] UI to list changes (commits) and diff 
  - [ ] Option to revert changes from UI

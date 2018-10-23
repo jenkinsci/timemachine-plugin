@@ -177,9 +177,9 @@ public class TimeMachine extends ManagementLink {
     public Commit getCommit(String sha1) throws Exception {
         final Repository repository = git.getRepository();
 
-        List<String> details = new ArrayList<>();
-
         ObjectId o = repository.resolve(sha1);
+        final RevCommit commit = new RevWalk(repository).parseCommit(o);
+
         ObjectId parent = repository.resolve(sha1+"~1");
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -198,7 +198,7 @@ public class TimeMachine extends ManagementLink {
 
         diff = diff.substring(diff.indexOf('\n')+1);
         diff = diff.substring(diff.indexOf('\n')+1);
-        return new Commit(sha1, diff);
+        return new Commit(commit, diff);
     }
 
     private static AbstractTreeIterator prepareTreeParser(Repository repository, ObjectId ref) throws Exception {
