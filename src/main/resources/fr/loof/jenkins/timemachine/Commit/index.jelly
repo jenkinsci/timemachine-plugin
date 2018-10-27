@@ -9,8 +9,10 @@
     <st:include it="${app}" page="sidepanel.jelly" />
     <l:main-panel>
       <h1><img src="${rootURL}/plugin/timemachine/64x64/delorean.png"/> Changes by ${it.author} on ${it.time}</h1>
+      <div style="float:right">
+        <input type="button" value="Revert changes" class="yui-button danger" onclick="TODO" />
+      </div>
       <h3>${it.message}</h3>
-
 
       <div id="diff">${it.diff}</div>
       <script>

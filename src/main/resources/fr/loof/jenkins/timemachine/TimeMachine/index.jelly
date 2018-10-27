@@ -1,5 +1,5 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:fmt="jelly:fmt"  xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <l:layout permission="${app.ADMINISTER}" title="${%Configuration history}">
     <st:include it="${app}" page="sidepanel.jelly" />
     <l:main-panel>
@@ -9,16 +9,21 @@
         <table>
           <thead>
             <th>id</th>
+            <th>date</th>
             <th>author</th>
             <th>message</th>
           </thead>
           <tbody>
           <j:forEach var="commit" items="${it.history}">
-          <tr>
-            <td><a href="commit/${commit.id.name}">${commit.id.abbreviate(8).name()}</a></td>
-            <td><a href="${rootURL}/user/${commit.authorIdent.name}">${commit.authorIdent.name}</a></td>
-            <td>${commit.shortMessage}</td>
-          </tr>
+            <j:new className="java.util.Date" var="commitTime">
+              <j:arg type="long" value="${1000 * commit.commitTime}"/>
+            </j:new>
+            <tr>
+              <td><a href="commit/${commit.id.name}">${commit.id.abbreviate(8).name()}</a></td>
+              <td><fmt:formatDate type="BOTH" dateStyle="MEDIUM" timeStyle="SHORT" value="${commitTime}" var="date"/>${date}</td>
+              <td><a href="${rootURL}/user/${commit.authorIdent.name}">${commit.authorIdent.name}</a></td>
+              <td>${commit.shortMessage}</td>
+            </tr>
           </j:forEach>
           </tbody>
         </table>

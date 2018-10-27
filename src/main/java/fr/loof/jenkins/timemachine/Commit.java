@@ -14,7 +14,7 @@ public class Commit {
     private String sha1;
     private final String message;
     private final String author;
-    private final int time;
+    private final long time;
     private String diff;
 
     public Commit(RevCommit commit, String diff) {

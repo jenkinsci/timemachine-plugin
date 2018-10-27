@@ -1,5 +1,8 @@
 package fr.loof.jenkins.timemachine;
 
+import hudson.model.Describable;
+import hudson.model.Descriptor;
+import jenkins.model.Jenkins;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.servlet.Filter;
@@ -56,7 +59,11 @@ public class TimeMachineFilter implements Filter {
         }
 
         if (pathInfo.endsWith("/createItem")) {
-            return "create new Item";  // TODO find way to capture item type & item name
+            final String name = request.getParameter("name");
+            if (name != null) {
+                return "create new Item : " + name;
+            }
+            return "create new Item";
         }
 
         if (pathInfo.startsWith("/job/") && pathInfo.endsWith("/configSubmit")) {
