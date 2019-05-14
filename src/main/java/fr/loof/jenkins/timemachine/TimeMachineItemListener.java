@@ -16,12 +16,40 @@ import java.io.IOException;
 public class TimeMachineItemListener extends ItemListener {
 
     @Inject TimeMachine timeMachine;
-    
+
+    @Override
+    public void onCreated(Item item) {
+        if (item instanceof AbstractItem) {
+            final AbstractItem i = (AbstractItem) item;
+            try {
+                timeMachine.add(i.getDisplayName(), i.getConfigFile(), Action.CREATE);
+            } catch (IOException | GitAPIException e) {
+                // oups
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    @Override
+    public void onCopied(Item src, Item item) {
+        if (item instanceof AbstractItem) {
+            final AbstractItem i = (AbstractItem) item;
+            try {
+                timeMachine.add(i.getDisplayName() + "as a copy of " + src.getDisplayName(), i.getConfigFile(), Action.CREATE);
+            } catch (IOException | GitAPIException e) {
+                // oups
+                e.printStackTrace();
+            }
+        }
+    }
+
     @Override
     public void onDeleted(Item item) {
         if (item instanceof AbstractItem) {
+            final AbstractItem i = (AbstractItem) item;
             try {
-                timeMachine.add(((AbstractItem) item).getConfigFile());
+                timeMachine.add(i.getDisplayName(), i.getConfigFile(), Action.DELETE);
             } catch (IOException | GitAPIException e) {
                 // oups
                 e.printStackTrace();

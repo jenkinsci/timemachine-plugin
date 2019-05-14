@@ -15,7 +15,6 @@ import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
-import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
@@ -26,11 +25,9 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
@@ -75,12 +72,6 @@ public class TimeMachine extends ManagementLink {
             git = Git.open(rootDir);
         } catch (RepositoryNotFoundException e) {
             git = Git.init().setDirectory(rootDir).call();
-            git.commit()
-                .setAuthor("👻", "timemachine-plugin@jenkins.io")
-                .setCommitter("👻", "timemachine-plugin@jenkins.io")
-                .setMessage("initial commit")
-                .setAllowEmpty(true)
-                .call().name();
         }
         rel = rootDir.getCanonicalPath().length() + 1;
         log.info("Timemachine ready, using git repository "+rootDir);
@@ -88,13 +79,14 @@ public class TimeMachine extends ManagementLink {
     }
 
 
-    public void add(XmlFile file) throws IOException, GitAPIException {
+    public void add(String target, XmlFile file, Action action) throws IOException, GitAPIException {
         if (git == null) return; // jenkins init
         final String path = file.getFile().getCanonicalPath().substring(rel);
-        log.fine( " +" +path);
+        final Change change = new Change(target, path, action);
+
         final ChangeSet changeSet = this.changeSet.get();
         if (changeSet != null) {
-            changeSet.add(path);
+            changeSet.add(change);
         } else {
             // change happens outside a web request
             synchronized (git) {
@@ -104,60 +96,35 @@ public class TimeMachine extends ManagementLink {
                  && status.getRemoved().size() == 0
                  && status.getChanged().size() == 0) return;
 
-                String cause = guessCause();
                 final Object principal = Jenkins.getAuthentication().getPrincipal();
                 final String author = principal.toString();
                 String sha1 = git.commit()
                         .setAuthor(author, "system@nowhere.org") // TODO get author's email from User.getUserProperty
-                        .setCommitter("👻", "timemachine-plugin@jenkins.io")
-                        .setMessage("internally updated "+ path + '\n' + cause)
+                        .setMessage(change.toString())
                         .call().name();
                 log.fine("> " + sha1);
             }
         }
     }
 
-    /**
-     * Analyze the call stack to guess the cause for this SYSTEM configuration change.
-     */
-    private String guessCause() {
-
-        // TODO search for known system invokers
-        final StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        for (StackTraceElement element : stackTrace) {
-            switch (element.getClassName()) {
-                case "org.jvnet.hudson.reactor.Reactor":
-                    return "Jenkins initialisation";
-                case "jenkins.install.SetupWizard":
-                    return "Setup Wizard";
-            }
-        }
-
-
-        try (StringWriter w = new StringWriter();
-             PrintWriter p = new PrintWriter(w)) {
-            new Throwable().printStackTrace(p);
-            return w.toString();
-        } catch (IOException e) {
-            return "";
-        }
-
-
-    }
 
     public void start() {
         changeSet.set(new ChangeSet());
     }
 
 
-    public void commit(String message) throws GitAPIException {
+    public void commit() throws GitAPIException {
         if (git == null) return; // jenkins init
         final ChangeSet changeSet = this.changeSet.get();
         if (changeSet == null || changeSet.isEmpty()) return;
 
+        final String message = changeSet.getChanges().stream()
+                .map(Change::toString)
+                .collect(Collectors.joining("\n"));
+
         synchronized (git) {
-            for (String path : changeSet.getChanges()) {
-                git.add().addFilepattern(path).call();
+            for (Change change : changeSet.getChanges()) {
+                git.add().addFilepattern(change.path).call();
             }
             final Object principal = Jenkins.getAuthentication().getPrincipal();
             String sha1 = git.commit()

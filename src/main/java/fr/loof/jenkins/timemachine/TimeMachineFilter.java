@@ -1,8 +1,5 @@
 package fr.loof.jenkins.timemachine;
 
-import hudson.model.Describable;
-import hudson.model.Descriptor;
-import jenkins.model.Jenkins;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.servlet.Filter;
@@ -11,7 +8,6 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
 /**
@@ -32,49 +28,19 @@ public class TimeMachineFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        HttpServletRequest h = (HttpServletRequest) servletRequest;
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         timeMachine.start();
-        filterChain.doFilter(servletRequest, servletResponse);
+        filterChain.doFilter(request, response);
         try {
-            timeMachine.commit(guessAction(h));
+            timeMachine.commit();
         } catch (GitAPIException e) {
             throw new RuntimeException("oups", e);
         }
 
     }
 
-    /**
-     * Guess user intent based on the requested URI
-     */
-    private String guessAction(HttpServletRequest request) {
-        String pathInfo = request.getPathInfo();
-
-        switch (pathInfo) {
-            case "/configSubmit"               : return "configure system";
-            case "/setupWizard/createAdminUser": return "create Administrator from setup wizard";
-            case "/configureSecurity/configure": return "configure global security";
-            case "/configureTools/configure"   : return "configure tools";
-            // ...
-        }
-
-        if (pathInfo.endsWith("/createItem")) {
-            final String name = request.getParameter("name");
-            if (name != null) {
-                return "create new Item : " + name;
-            }
-            return "create new Item";
-        }
-
-        if (pathInfo.startsWith("/job/") && pathInfo.endsWith("/configSubmit")) {
-            return "edited configuration of job " + pathInfo.substring(5, pathInfo.length() - 13);
-        }
-
-        return pathInfo;
-    }
-
     @Override
     public void destroy() {
-
+        // noop
     }
 }
